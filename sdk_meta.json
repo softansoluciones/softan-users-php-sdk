@@ -3,11 +3,15 @@
   "sdk_version": "0.1.0",
   "sdk_type": "php",
   "sdk_author": "Softan Soluciones",
-  "default_environment": "prod",
+  "app_id": "SOU-08A",
+  "default_environment": "stg",
   "base_urls": {
-    "dev":  "http://localhost/softan-users/main-api-v2/public/",
-    "stg":  "",
-    "prod": ""
+    "stg":  "https://users-stg.softansoluciones.com/",
+    "prod": "https://users.softansoluciones.com/"
+  },
+  "credentials": {
+    "stg":  { "api_key": "FQEDRVZZTxJRCE5UAwNTEQFQQFYIThcGXxwKU1QBS1IHEgIMGhFXWRVTAwcFF1RVRwNcHENRWxxXBgMMRlMCQA==" },
+    "prod": { "api_key": "RFJUFVZaFEcHXEtQAQFQSgkDFVEKT0QFXh1TA1BTQgcCQlcPG0tWDRkGAQsEEAZVTAVaGBBRWBsKVQYBRAleQw==" }
   },
   "endpoints": {
     "users": {
@@ -17,7 +21,7 @@
       "base": "usersapps"
     },
     "commons": {
-      "countries":           "commons/countries",
+      "countries":            "commons/countries",
       "identification_types": "commons/identification-types"
     }
   }

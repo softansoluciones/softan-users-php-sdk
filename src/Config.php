@@ -3,6 +3,8 @@ namespace SoftanUsers;
 
 final class Config
 {
+    private const XOR_KEY = 's0ft4n-sdk-2025';
+
     public static function getMeta(string $key, mixed $default = null): mixed
     {
         return SDK::$META[$key] ?? $default;
@@ -17,16 +19,9 @@ final class Config
     {
         $active = self::getConfig('active_environment');
         if (!$active) {
-            $active = self::getMeta('default_environment', 'prod');
+            $active = self::getMeta('default_environment', 'stg');
         }
         return (string) $active;
-    }
-
-    public static function getEnvironmentConfig(?string $env = null): array
-    {
-        $env = $env ?: self::getActiveEnvironment();
-        $all = self::getConfig('environments', []);
-        return (array) ($all[$env] ?? []);
     }
 
     public static function getBaseUrl(?string $env = null): string
@@ -39,21 +34,23 @@ final class Config
         return $base;
     }
 
-    public static function getApiKey(?string $env = null): string
+    public static function getAppId(): string
     {
-        return (string) (self::getEnvironmentConfig($env)['api_key'] ?? '');
+        return (string) (self::getMeta('app_id', ''));
     }
 
-    public static function getAppId(?string $env = null): string
+    public static function getApiKey(?string $env = null): string
     {
-        return (string) (self::getEnvironmentConfig($env)['app_id'] ?? '');
+        $env     = $env ?: self::getActiveEnvironment();
+        $encoded = (string) (self::getMeta('credentials', [])[$env]['api_key'] ?? '');
+        return $encoded !== '' ? self::decodeKey($encoded) : '';
     }
 
     /**
      * Resolve an endpoint path from the nested endpoints map in sdk_meta.json.
      *
-     * Usage: Config::resolveEndpoint('users', 'base')    → 'users'
-     *        Config::resolveEndpoint('commons', 'countries') → 'commons/countries'
+     * Usage: Config::resolveEndpoint('users', 'base')           → 'users'
+     *        Config::resolveEndpoint('commons', 'countries')    → 'commons/countries'
      *
      * @throws \InvalidArgumentException if the path is not found or not a string leaf.
      */
@@ -79,5 +76,19 @@ final class Config
         }
 
         return $map;
+    }
+
+    private static function decodeKey(string $encoded): string
+    {
+        $raw = base64_decode($encoded, true);
+        if ($raw === false) {
+            return '';
+        }
+        $result = '';
+        $keyLen = strlen(self::XOR_KEY);
+        for ($i = 0, $len = strlen($raw); $i < $len; $i++) {
+            $result .= chr(ord($raw[$i]) ^ ord(self::XOR_KEY[$i % $keyLen]));
+        }
+        return $result;
     }
 }

@@ -10,7 +10,7 @@ final class Headers
     public static function buildRuntimeHeaders(?string $env = null): array
     {
         $apiKey = Config::getApiKey($env);
-        $appId  = Config::getAppId($env);
+        $appId  = Config::getAppId();
 
         if ($apiKey === '') {
             throw new \RuntimeException(
