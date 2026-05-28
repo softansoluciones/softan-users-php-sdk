@@ -1,0 +1,24 @@
+{
+  "sdk_name": "Softan Users SDK",
+  "sdk_version": "0.1.0",
+  "sdk_type": "php",
+  "sdk_author": "Softan Soluciones",
+  "default_environment": "prod",
+  "base_urls": {
+    "dev":  "http://localhost/softan-users/main-api-v2/public/",
+    "stg":  "",
+    "prod": ""
+  },
+  "endpoints": {
+    "users": {
+      "base": "users"
+    },
+    "usersapps": {
+      "base": "usersapps"
+    },
+    "commons": {
+      "countries":           "commons/countries",
+      "identification_types": "commons/identification-types"
+    }
+  }
+}

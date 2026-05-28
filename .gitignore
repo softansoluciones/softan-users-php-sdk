@@ -1,0 +1,4 @@
+vendor/
+sdk_config.json
+.phpunit.result.cache
+.phpunit.cache/
