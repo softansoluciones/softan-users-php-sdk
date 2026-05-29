@@ -9,8 +9,20 @@ final class SDK
     public static array $META   = [];
     public static array $CONFIG = [];
 
+    /**
+     * Lazy initializer — only loads from disk the first time.
+     * If the consuming project pre-sets $META and $CONFIG before the first
+     * service call, those values are preserved for the entire request lifecycle.
+     *
+     * To force a specific environment programmatically:
+     *   SDK::$META   = SDK::loadJson(SDK::META_PATH);
+     *   SDK::$CONFIG = ['active_environment' => 'prod'];
+     */
     public static function init(): void
     {
+        if (self::$META !== []) {
+            return;
+        }
         self::$META   = self::loadJson(self::META_PATH);
         self::$CONFIG = self::loadJson(self::CONFIG_PATH);
     }

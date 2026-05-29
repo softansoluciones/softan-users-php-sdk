@@ -8,6 +8,8 @@
 
 SDK oficial para integrar aplicaciones con Softan Users en PHP. Expone métodos estáticos de alto nivel para gestionar usuarios, asociaciones de aplicación y datos comunes (países, tipos de identificación).
 
+Las credenciales de acceso a la API están embebidas en el SDK (`sdk_meta.json`). No se requiere ninguna configuración manual de API keys.
+
 ## Requisitos
 
 - PHP 8.1 o superior
@@ -17,14 +19,10 @@ SDK oficial para integrar aplicaciones con Softan Users en PHP. Expone métodos 
 ## Instalación
 
 ```bash
-composer require softan/users-php-sdk:^0.1.0
+composer require softan/users-php-sdk:^0.2.0
 ```
 
-Luego inicializa la configuración con tu API key y App ID:
-
-```bash
-php vendor/bin/install.php
-```
+Listo. No se necesita ningún paso adicional — las credenciales están embebidas.
 
 ### Alternativa: instalación desde GitHub (VCS)
 
@@ -41,7 +39,7 @@ require __DIR__ . '/vendor/autoload.php';
 
 use SoftanUsers\Services;
 
-// Listar todos los usuarios
+// Listar todos los usuarios (entorno stg por defecto)
 $users = Services::listUsers();
 
 // Crear un usuario
@@ -138,46 +136,63 @@ El SDK usa dos modos de autenticación según el tipo de operación:
 
 | Modo | Headers enviados | Uso |
 |------|-----------------|-----|
-| **Internal** | `X-API-KEY` + `X-App-Id` | Escritura (create, update, delete) |
+| **Internal** | `X-API-KEY` + `X-App-Id` | Escritura y lectura de recursos (users, usersapps) |
 | **Public** | Solo `X-API-KEY` | Lectura de datos comunes (countries, id-types) |
 
-Ambos modos se configuran desde `sdk_config.json` — no requieren ningún cambio en el código.
+Las credenciales están embebidas en el SDK y se seleccionan automáticamente según el entorno activo.
 
-## Configuración
+## Entornos
 
-La configuración se gestiona en `sdk_config.json` (creado por `bin/install.php`, **no versionar**).
+El SDK incluye credenciales para `stg` y `prod`. El entorno por defecto es `stg`.
 
-Estructura:
+### Cambiar el entorno activo
 
-```json
+El SDK usa inicialización lazy: si el proyecto pre-configura `SDK::$META` y `SDK::$CONFIG` antes de la primera llamada a un servicio, esos valores se usan durante todo el ciclo de vida de la request.
+
+```php
+use SoftanUsers\SDK;
+use SoftanUsers\Services;
+
+// Forzar entorno prod (llamar antes del primer Services::*)
+SDK::$META   = SDK::loadJson(SDK::META_PATH);
+SDK::$CONFIG = ['active_environment' => 'prod'];
+
+// Todas las llamadas siguientes usarán prod
+$users = Services::listUsers();
+```
+
+Para proyectos que siempre usan el mismo entorno, lo habitual es encapsular esto en un método de inicialización que se llame en el constructor del servicio que consume el SDK:
+
+```php
+private function initUsersSdk(): void
 {
-  "active_environment": "prod",
-  "environments": {
-    "dev":  { "api_key": "", "app_id": "" },
-    "stg":  { "api_key": "", "app_id": "" },
-    "prod": { "api_key": "", "app_id": "" }
-  }
+    \SoftanUsers\SDK::$META   = \SoftanUsers\SDK::loadJson(\SoftanUsers\SDK::META_PATH);
+    \SoftanUsers\SDK::$CONFIG = ['active_environment' => 'prod'];
 }
 ```
 
-Copia `sdk_config.json.example` como punto de partida si prefieres configurarlo manualmente.
+Si no se realiza ninguna inicialización previa, el SDK usa `stg` como entorno por defecto (definido en `sdk_meta.json`).
 
-## CLI
+## Configuración
 
-```bash
-# Instalador interactivo (crea sdk_config.json)
-php vendor/bin/install.php
+Las credenciales de API están embebidas en `sdk_meta.json` (XOR+base64). No es necesario ni recomendable crear un `sdk_config.json` con credenciales.
 
-# Modo no interactivo
-php vendor/bin/install.php --api-key="TU_API_KEY" --app-id="SOM-XXXX" --env=prod
+El único uso válido de `sdk_config.json` es sobrescribir el entorno activo cuando se prefiere configuración en archivo en lugar de código:
+
+```json
+{
+  "active_environment": "prod"
+}
 ```
+
+`sdk_config.json` debe ir en `.gitignore` si se crea. No está incluido en el repositorio del SDK.
 
 ## TLS
 
 La verificación TLS está habilitada por defecto. Para desarrollo puedes desactivarla por llamada:
 
 ```php
-Services::listUsers(null, false);       // segundo parámetro: $verifyTLS
+Services::listUsers(null, false);        // segundo parámetro: $verifyTLS
 Services::createUser($payload, null, false);
 ```
 
@@ -185,6 +200,15 @@ Services::createUser($payload, null, false);
 
 - PHP: 8.1+
 - Sistemas: Windows, Linux, macOS
+
+## Desarrollo
+
+```bash
+composer install
+composer test
+```
+
+CI: el workflow en `.github/workflows/ci.yml` valida Composer e integra PHPUnit en PHP 8.1/8.2/8.3.
 
 ## Licencia
 
