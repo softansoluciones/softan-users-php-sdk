@@ -147,6 +147,21 @@ El SDK incluye credenciales para `stg` y `prod`. El entorno por defecto es `stg`
 
 ### Cambiar el entorno activo
 
+**Opción 1 — CLI (recomendado para configuración persistente):**
+
+```bash
+# Interactivo
+php vendor/bin/users-set-env.php
+
+# No interactivo
+php vendor/bin/users-set-env.php --env=prod
+php vendor/bin/users-set-env.php --env=stg
+```
+
+Crea o actualiza `sdk_config.json` con el entorno seleccionado. Ese archivo persiste entre requests hasta que se vuelva a ejecutar el script.
+
+**Opción 2 — Programática (recomendado para proyectos con entorno fijo en código):**
+
 El SDK usa inicialización lazy: si el proyecto pre-configura `SDK::$META` y `SDK::$CONFIG` antes de la primera llamada a un servicio, esos valores se usan durante todo el ciclo de vida de la request.
 
 ```php
@@ -161,7 +176,7 @@ SDK::$CONFIG = ['active_environment' => 'prod'];
 $users = Services::listUsers();
 ```
 
-Para proyectos que siempre usan el mismo entorno, lo habitual es encapsular esto en un método de inicialización que se llame en el constructor del servicio que consume el SDK:
+Lo habitual es encapsular esto en un método de inicialización del servicio que consume el SDK:
 
 ```php
 private function initUsersSdk(): void
