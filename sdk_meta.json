@@ -15,10 +15,12 @@
   },
   "endpoints": {
     "users": {
-      "base": "users"
+      "base":    "users",
+      "filters": "users/filters"
     },
     "usersapps": {
-      "base": "usersapps"
+      "base":    "usersapps",
+      "filters": "usersapps/filters"
     },
     "commons": {
       "countries":            "commons/countries",

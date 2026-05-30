@@ -19,6 +19,27 @@ final class Services
     }
 
     /**
+     * POST /users/filters — Filter users with server-side pagination.
+     *
+     * Filterable fields: user_id, identification_type, user_identification,
+     *   user_name, user_last_name, user_email, user_phone, country_id, user_status,
+     *   created_at (range: from_created_at / to_created_at),
+     *   updated_at (range: from_updated_at / to_updated_at).
+     *
+     * Control fields: page, per_page, order_by, order_dir.
+     * Use '%value%' for LIKE matching. Pass an array for IN matching.
+     *
+     * @param array $filters  Keys: filters (array), page, per_page, order_by, order_dir
+     */
+    public static function filterUsers(array $filters, ?array $headers = null, bool $verifyTLS = true): array
+    {
+        SDK::init();
+        $headers  = $headers ?: Headers::buildRuntimeHeaders();
+        $endpoint = Config::resolveEndpoint('users', 'filters');
+        return Client::request($endpoint, 'POST', $headers, $filters, null, $verifyTLS);
+    }
+
+    /**
      * GET /users/{id} — Show a single user.
      */
     public static function showUser(int $id, ?array $headers = null, bool $verifyTLS = true): array
@@ -89,6 +110,26 @@ final class Services
     // ----------------------------------------------------------------
     // Users Apps
     // ----------------------------------------------------------------
+
+    /**
+     * POST /usersapps/filters — Filter user-app associations with server-side pagination.
+     *
+     * Filterable fields: user_app_id, user_id, app_identifier, user_app_status,
+     *   user_email, user_name, user_last_name, user_status,
+     *   created_at (range: from_created_at / to_created_at),
+     *   updated_at (range: from_updated_at / to_updated_at).
+     *
+     * Control fields: page, per_page, order_by, order_dir.
+     *
+     * @param array $filters  Keys: filters (array), page, per_page, order_by, order_dir
+     */
+    public static function filterUserApps(array $filters, ?array $headers = null, bool $verifyTLS = true): array
+    {
+        SDK::init();
+        $headers  = $headers ?: Headers::buildRuntimeHeaders();
+        $endpoint = Config::resolveEndpoint('usersapps', 'filters');
+        return Client::request($endpoint, 'POST', $headers, $filters, null, $verifyTLS);
+    }
 
     /**
      * GET /usersapps — List all user-app associations.

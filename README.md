@@ -93,6 +93,30 @@ $updated = Services::updateUser([
 $deleted = Services::deleteUser(42);
 ```
 
+### Filtrar usuarios (server-side)
+
+```php
+// Filtrado básico
+$result = Services::filterUsers([
+    'filters' => ['user_status' => 1, 'user_email' => '%@softansol.com'],
+    'page'     => 1,
+    'per_page' => 20,
+    'order_by' => 'created_at',
+    'order_dir'=> 'desc',
+]);
+
+// $result['data']['users']      → array de usuarios
+// $result['data']['pagination'] → { page, per_page, total, total_pages }
+```
+
+**Campos filtrables:** `user_id`, `identification_type`, `user_identification`, `user_name`, `user_last_name`, `user_email`, `user_phone`, `country_id`, `user_status`, `created_at` (range), `updated_at` (range)
+
+Modos de filtrado:
+- Exacto: `'user_status' => 1`
+- LIKE: `'user_email' => '%@softansol.com'`
+- IN: `'user_status' => [1, 2]`
+- Rango: `'from_created_at' => '2025-01-01', 'to_created_at' => '2025-12-31'`
+
 ### Users Apps (asociaciones usuario-aplicación)
 
 ```php
@@ -119,6 +143,21 @@ $updated = Services::updateUserApp([
 // Eliminar asociación
 $deleted = Services::deleteUserApp(10);
 ```
+
+### Filtrar asociaciones usuario-aplicación (server-side)
+
+```php
+$result = Services::filterUserApps([
+    'filters' => ['app_identifier' => 'SOM-65B', 'user_app_status' => 1],
+    'page'     => 1,
+    'per_page' => 50,
+]);
+
+// $result['data']['usersapps']  → array de asociaciones (incluye user_email, user_name)
+// $result['data']['pagination'] → { page, per_page, total, total_pages }
+```
+
+**Campos filtrables:** `user_app_id`, `user_id`, `app_identifier`, `user_app_status`, `user_email`, `user_name`, `user_last_name`, `user_status`, `created_at` (range), `updated_at` (range)
 
 ### Commons
 
