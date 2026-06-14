@@ -225,6 +225,9 @@ private function initUsersSdk(): void
 }
 ```
 
+> **Nota:** `sdk_config.json` se crea en la raíz del proyecto (junto a `composer.json`), no dentro de `vendor/`. Esto garantiza que el archivo persiste tras `composer install` o `composer update`.
+```
+
 Si no se realiza ninguna inicialización previa, el SDK usa `stg` como entorno por defecto (definido en `sdk_meta.json`).
 
 ## Configuración

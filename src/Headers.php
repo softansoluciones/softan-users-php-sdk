@@ -14,7 +14,7 @@ final class Headers
 
         if ($apiKey === '') {
             throw new \RuntimeException(
-                'SoftanUsers: api_key is not configured. Run bin/install.php or set up sdk_config.json.'
+                'SoftanUsers: api_key is not configured. Run php vendor/bin/users-set-env.php or set up sdk_config.json.'
             );
         }
 
@@ -39,7 +39,7 @@ final class Headers
 
         if ($apiKey === '') {
             throw new \RuntimeException(
-                'SoftanUsers: api_key is not configured. Run bin/install.php or set up sdk_config.json.'
+                'SoftanUsers: api_key is not configured. Run php vendor/bin/users-set-env.php or set up sdk_config.json.'
             );
         }
 

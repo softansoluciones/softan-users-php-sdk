@@ -20,16 +20,21 @@ $autoloadCandidates = [
     __DIR__ . '/../../../autoload.php',
     getcwd() . '/vendor/autoload.php',
 ];
+$loaded = false;
 foreach ($autoloadCandidates as $candidate) {
-    if (is_file($candidate)) { require $candidate; break; }
+    if (is_file($candidate)) { require $candidate; $loaded = true; break; }
+}
+if (!$loaded || !class_exists('SoftanUsers\\SDK')) {
+    fwrite(STDERR, "No se encontró el autoloader de Composer.\n");
+    exit(1);
 }
 
 use SoftanUsers\SDK;
 
 SDK::init();
 
-$configPath = SDK::CONFIG_PATH;
-$validEnvs  = ['stg', 'prod'];
+$configPath = SDK::configPath();
+$validEnvs  = array_keys((array) (SDK::$META['base_urls'] ?? ['stg' => '', 'prod' => '']));
 
 // Parse --env flag
 $env = null;
@@ -44,15 +49,11 @@ echo "  =====================================\n\n";
 
 // Interactive prompt if not passed as flag
 if ($env === null) {
-    $current = 'stg';
-    if (is_file($configPath)) {
-        $existing = json_decode((string) file_get_contents($configPath), true);
-        $current  = (string) ($existing['active_environment'] ?? 'stg');
-    }
+    $current = SDK::$CONFIG['active_environment'] ?? SDK::$META['default_environment'] ?? 'stg';
 
-    echo "  Current environment: {$current}\n";
-    echo "  Available environments: stg, prod\n\n";
-    echo "  Enter environment [stg/prod] (default: {$current}): ";
+    echo "  Current environment : {$current}\n";
+    echo "  Available           : " . implode(', ', $validEnvs) . "\n\n";
+    echo "  Enter environment (default: {$current}): ";
     $input = trim((string) fgets(STDIN));
     $env   = $input !== '' ? $input : $current;
 }
@@ -60,21 +61,18 @@ if ($env === null) {
 // Validate
 $env = strtolower($env);
 if (!in_array($env, $validEnvs, true)) {
-    echo "  Error: '{$env}' is not a valid environment. Use 'stg' or 'prod'.\n\n";
+    fwrite(STDERR, "  Error: '{$env}' is not a valid environment. Options: " . implode(', ', $validEnvs) . "\n\n");
     exit(1);
 }
 
-// Write sdk_config.json
+// Write sdk_config.json at the project root
 $config = ['active_environment' => $env];
-$result = file_put_contents(
-    $configPath,
-    json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n"
-);
+$result = SDK::saveJson($configPath, $config);
 
-if ($result === false) {
-    echo "  Error: could not write sdk_config.json at {$configPath}\n\n";
+if (!$result) {
+    fwrite(STDERR, "  Error: could not write sdk_config.json at {$configPath}\n\n");
     exit(1);
 }
 
-echo "\n  Active environment set to: {$env}\n";
-echo "  Config saved to: {$configPath}\n\n";
+echo "\n  Active environment set to : {$env}\n";
+echo "  Config saved to           : {$configPath}\n\n";

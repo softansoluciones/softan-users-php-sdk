@@ -3,11 +3,31 @@ namespace SoftanUsers;
 
 final class SDK
 {
-    public const META_PATH   = __DIR__ . '/../sdk_meta.json';
-    public const CONFIG_PATH = __DIR__ . '/../sdk_config.json';
+    public const META_PATH = __DIR__ . '/../sdk_meta.json';
 
     public static array $META   = [];
     public static array $CONFIG = [];
+
+    /**
+     * Resolve the path to sdk_config.json at the consuming project's root.
+     *
+     * Walks up the directory tree from src/ until it finds the directory that
+     * contains vendor/autoload.php — that is the project root. This ensures the
+     * config survives composer install/update (which wipes vendor/).
+     *
+     * Falls back to the package directory (development / standalone use).
+     */
+    public static function configPath(): string
+    {
+        $dir = __DIR__;
+        for ($i = 0; $i < 8; $i++) {
+            if (is_file($dir . '/vendor/autoload.php')) {
+                return $dir . '/sdk_config.json';
+            }
+            $dir = dirname($dir);
+        }
+        return __DIR__ . '/../sdk_config.json';
+    }
 
     /**
      * Lazy initializer — only loads from disk the first time.
@@ -24,7 +44,7 @@ final class SDK
             return;
         }
         self::$META   = self::loadJson(self::META_PATH);
-        self::$CONFIG = self::loadJson(self::CONFIG_PATH);
+        self::$CONFIG = self::loadJson(self::configPath());
     }
 
     public static function loadJson(string $path): array
