@@ -19,7 +19,7 @@ Las credenciales de acceso a la API están embebidas en el SDK (`sdk_meta.json`)
 ## Instalación
 
 ```bash
-composer require softan/users-php-sdk:^0.2.3
+composer require softan/users-php-sdk:^0.2.4
 ```
 
 Listo. No se necesita ningún paso adicional — las credenciales están embebidas.
