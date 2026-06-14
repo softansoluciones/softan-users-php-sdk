@@ -15,7 +15,20 @@
 
 declare(strict_types=1);
 
-$configPath = __DIR__ . '/../sdk_config.json';
+$autoloadCandidates = [
+    __DIR__ . '/../vendor/autoload.php',
+    __DIR__ . '/../../../autoload.php',
+    getcwd() . '/vendor/autoload.php',
+];
+foreach ($autoloadCandidates as $candidate) {
+    if (is_file($candidate)) { require $candidate; break; }
+}
+
+use SoftanUsers\SDK;
+
+SDK::init();
+
+$configPath = SDK::CONFIG_PATH;
 $validEnvs  = ['stg', 'prod'];
 
 // Parse --env flag
