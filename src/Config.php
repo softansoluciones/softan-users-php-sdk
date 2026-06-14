@@ -17,19 +17,13 @@ final class Config
 
     public static function getActiveEnvironment(): string
     {
-        // 1. Programmatic override
+        // 1. Programmatic override or sdk_config.json
         $active = self::getConfig('active_environment');
         if ($active) {
             return strtolower((string) $active);
         }
 
-        // 2. Server / process environment variable
-        $envVar = getenv('SOFTAN_USERS_ENV');
-        if ($envVar !== false && $envVar !== '') {
-            return strtolower((string) $envVar);
-        }
-
-        // 3. Package default (sdk_meta.json → default_environment)
+        // 2. Package default (sdk_meta.json → default_environment)
         return (string) self::getMeta('default_environment', 'stg');
     }
 

@@ -192,24 +192,15 @@ El entorno activo se resuelve en este orden (mayor a menor prioridad):
 | 2 | Variable de entorno `SOFTAN_USERS_ENV` |
 | 3 | `sdk_meta.json → default_environment` (valor del paquete: `stg`) |
 
-### Opción A — Variable de entorno (recomendado)
+### Opción A — CLI (recomendado)
 
-No requiere cambios en código. Se configura una vez a nivel de servidor y sobrevive cualquier `composer install`.
-
-**Apache VirtualHost:**
-```apache
-SetEnv SOFTAN_USERS_ENV prod
+```bash
+php vendor/bin/users-set-env.php              # interactivo
+php vendor/bin/users-set-env.php --env=prod
+php vendor/bin/users-set-env.php --env=stg
 ```
 
-**`.htaccess`:**
-```apache
-SetEnv SOFTAN_USERS_ENV prod
-```
-
-**PHP bootstrap / `index.php` (antes de cualquier llamada al SDK):**
-```php
-putenv('SOFTAN_USERS_ENV=prod');
-```
+Escribe `sdk_config.json` en la raíz del proyecto. El cambio persiste entre requests y sobrevive `composer update`.
 
 ### Opción B — Override programático
 
@@ -222,13 +213,6 @@ use SoftanUsers\Services;
 SDK::$CONFIG = ['active_environment' => 'prod'];
 
 $users = Services::listUsers();
-```
-
-### Verificar la configuración activa
-
-```bash
-php vendor/bin/users-set-env.php
-php vendor/bin/users-set-env.php --env=prod   # muestra instrucciones para ese entorno
 ```
 
 ## TLS

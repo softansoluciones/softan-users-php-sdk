@@ -1,18 +1,14 @@
 #!/usr/bin/env php
 <?php
 /**
- * Softan Users SDK — Environment info & setup guide
+ * Softan Users SDK — Environment switcher
  *
- * The active environment is resolved in this order:
- *   1. SDK::$CONFIG['active_environment']  (programmatic override)
- *   2. SOFTAN_USERS_ENV env var            (server / process environment)
- *   3. sdk_meta.json → default_environment (package default: stg)
- *
- * This script shows the current resolution and instructions for each method.
+ * Switches the active environment by writing sdk_config.json at the project root.
  *
  * Usage:
- *   php vendor/bin/users-set-env.php
- *   php vendor/bin/users-set-env.php --env=prod   (writes an Apache/env suggestion)
+ *   php vendor/bin/users-set-env.php             (interactive)
+ *   php vendor/bin/users-set-env.php --env=prod
+ *   php vendor/bin/users-set-env.php --env=stg
  */
 
 declare(strict_types=1);
@@ -32,53 +28,43 @@ if (!$loaded || !class_exists('SoftanUsers\\SDK')) {
 }
 
 use SoftanUsers\SDK;
-use SoftanUsers\Config;
 
 SDK::init();
 
-$programmatic = SDK::$CONFIG['active_environment'] ?? null;
-$envVar       = getenv('SOFTAN_USERS_ENV') ?: null;
-$default      = SDK::$META['default_environment'] ?? 'stg';
-$active       = Config::getActiveEnvironment();
+$configPath = SDK::configPath();
+$validEnvs  = array_keys((array) (SDK::$META['base_urls'] ?? []));
+$current    = SDK::$CONFIG['active_environment'] ?? SDK::$META['default_environment'] ?? 'stg';
 
-// Target env from --env flag
-$target = null;
+// Parse --env flag
+$env = null;
 foreach ($argv as $arg) {
     if (str_starts_with($arg, '--env=')) {
-        $target = strtolower(trim(substr($arg, 6)));
+        $env = strtolower(trim(substr($arg, 6)));
     }
 }
 
-$validEnvs = array_keys((array) (SDK::$META['base_urls'] ?? []));
+// Interactive prompt if no flag provided
+if ($env === null) {
+    echo "\n  Softan Users SDK — Cambiar entorno\n";
+    echo "  ===================================\n";
+    echo "  Entorno actual  : {$current}\n";
+    echo "  Disponibles     : " . implode(', ', $validEnvs) . "\n\n";
+    echo "  Nuevo entorno (Enter para mantener [{$current}]): ";
+    $input = strtolower(trim((string) fgets(STDIN)));
+    $env   = $input !== '' ? $input : $current;
+}
 
-echo "\n";
-echo "  Softan Users SDK — Environment Setup\n";
-echo "  ======================================\n\n";
-echo "  Resolution (highest → lowest priority):\n";
-echo "  ┌─────────────────────────────────────────────────────────────┐\n";
-printf("  │  1. SDK::\$CONFIG['active_environment']  %-18s│\n", $programmatic ? "→ \"{$programmatic}\"" : '(not set)');
-printf("  │  2. SOFTAN_USERS_ENV (env var)          %-18s│\n", $envVar        ? "→ \"{$envVar}\""        : '(not set)');
-printf("  │  3. sdk_meta.json default               → \"%-14s\" │\n", $default);
-echo "  └─────────────────────────────────────────────────────────────┘\n";
-echo "  Active environment: {$active}\n\n";
-
-$target = $target ?? $active;
-
-if (!in_array($target, $validEnvs, true)) {
-    fwrite(STDERR, "  Entorno inválido: '{$target}'. Opciones: " . implode(', ', $validEnvs) . "\n\n");
+// Validate
+if (!in_array($env, $validEnvs, true)) {
+    fwrite(STDERR, "  Error: '{$env}' no es válido. Opciones: " . implode(', ', $validEnvs) . "\n");
     exit(1);
 }
 
-echo "  ── Cómo configurar el entorno \"{$target}\" ──\n\n";
+// Write sdk_config.json at the project root
+if (!SDK::saveJson($configPath, ['active_environment' => $env])) {
+    fwrite(STDERR, "  Error: no se pudo escribir en {$configPath}\n");
+    exit(1);
+}
 
-echo "  Opción A — Variable de entorno en Apache VirtualHost (recomendado):\n";
-echo "    SetEnv SOFTAN_USERS_ENV {$target}\n\n";
-
-echo "  Opción B — Variable de entorno en .htaccess:\n";
-echo "    SetEnv SOFTAN_USERS_ENV {$target}\n\n";
-
-echo "  Opción C — PHP (bootstrap / index.php, antes de cualquier llamada al SDK):\n";
-echo "    putenv('SOFTAN_USERS_ENV={$target}');\n\n";
-
-echo "  Opción D — Override programático (máxima prioridad):\n";
-echo "    \\SoftanUsers\\SDK::\$CONFIG = ['active_environment' => '{$target}'];\n\n";
+echo "  OK — Entorno activo: {$env}\n";
+echo "  Config guardado en: {$configPath}\n\n";
