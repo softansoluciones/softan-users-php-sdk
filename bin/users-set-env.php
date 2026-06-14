@@ -3,7 +3,7 @@
 /**
  * Softan Users SDK — Environment switcher
  *
- * Switches the active environment by writing sdk_config.json at the project root.
+ * Switches the active environment by writing sdk_config.json next to sdk_meta.json.
  *
  * Usage:
  *   php vendor/bin/users-set-env.php             (interactive)
@@ -31,7 +31,7 @@ use SoftanUsers\SDK;
 
 SDK::init();
 
-$configPath = SDK::configPath();
+$configPath = SDK::CONFIG_PATH;
 $validEnvs  = array_keys((array) (SDK::$META['base_urls'] ?? []));
 $current    = SDK::$CONFIG['active_environment'] ?? SDK::$META['default_environment'] ?? 'stg';
 
@@ -67,4 +67,4 @@ if (!SDK::saveJson($configPath, ['active_environment' => $env])) {
 }
 
 echo "  OK — Entorno activo: {$env}\n";
-echo "  Config guardado en: {$configPath}\n\n";
+echo "  Config en: {$configPath}\n\n";
