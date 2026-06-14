@@ -1,13 +1,13 @@
 {
   "sdk_name": "Softan Users SDK",
-  "sdk_version": "0.2.0",
+  "sdk_version": "0.2.1",
   "sdk_type": "php",
   "sdk_author": "Softan Soluciones",
   "app_id": "SOU-08A",
   "default_environment": "stg",
   "base_urls": {
-    "stg":  "https://users-stg.softansoluciones.com/",
-    "prod": "https://users.softansoluciones.com/"
+    "stg":  "https://users-stg.softansoluciones.com/public/",
+    "prod": "https://users.softansoluciones.com/public/"
   },
   "credentials": {
     "stg":  { "api_key": "FQEDRVZZTxJRCE5UAwNTEQFQQFYIThcGXxwKU1QBS1IHEgIMGhFXWRVTAwcFF1RVRwNcHENRWxxXBgMMRlMCQA==" },
