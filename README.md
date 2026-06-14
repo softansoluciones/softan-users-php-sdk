@@ -184,65 +184,52 @@ Las credenciales están embebidas en el SDK y se seleccionan automáticamente se
 
 El SDK incluye credenciales para `stg` y `prod`. El entorno por defecto es `stg`.
 
-### Cambiar el entorno activo
+El entorno activo se resuelve en este orden (mayor a menor prioridad):
 
-**Opción 1 — CLI (recomendado para configuración persistente):**
+| Prioridad | Mecanismo |
+|-----------|-----------|
+| 1 | `SDK::$CONFIG['active_environment']` — override programático |
+| 2 | Variable de entorno `SOFTAN_USERS_ENV` |
+| 3 | `sdk_meta.json → default_environment` (valor del paquete: `stg`) |
 
-```bash
-# Interactivo
-php vendor/bin/users-set-env.php
+### Opción A — Variable de entorno (recomendado)
 
-# No interactivo
-php vendor/bin/users-set-env.php --env=prod
-php vendor/bin/users-set-env.php --env=stg
+No requiere cambios en código. Se configura una vez a nivel de servidor y sobrevive cualquier `composer install`.
+
+**Apache VirtualHost:**
+```apache
+SetEnv SOFTAN_USERS_ENV prod
 ```
 
-Crea o actualiza `sdk_config.json` con el entorno seleccionado. Ese archivo persiste entre requests hasta que se vuelva a ejecutar el script.
+**`.htaccess`:**
+```apache
+SetEnv SOFTAN_USERS_ENV prod
+```
 
-**Opción 2 — Programática (recomendado para proyectos con entorno fijo en código):**
+**PHP bootstrap / `index.php` (antes de cualquier llamada al SDK):**
+```php
+putenv('SOFTAN_USERS_ENV=prod');
+```
 
-El SDK usa inicialización lazy: si el proyecto pre-configura `SDK::$META` y `SDK::$CONFIG` antes de la primera llamada a un servicio, esos valores se usan durante todo el ciclo de vida de la request.
+### Opción B — Override programático
+
+Útil cuando el entorno se determina en código (multi-tenant, flags de configuración, etc.). Debe ejecutarse antes de la primera llamada a `Services::*`.
 
 ```php
 use SoftanUsers\SDK;
 use SoftanUsers\Services;
 
-// Forzar entorno prod (llamar antes del primer Services::*)
-SDK::$META   = SDK::loadJson(SDK::META_PATH);
 SDK::$CONFIG = ['active_environment' => 'prod'];
 
-// Todas las llamadas siguientes usarán prod
 $users = Services::listUsers();
 ```
 
-Lo habitual es encapsular esto en un método de inicialización del servicio que consume el SDK:
+### Verificar la configuración activa
 
-```php
-private function initUsersSdk(): void
-{
-    \SoftanUsers\SDK::$META   = \SoftanUsers\SDK::loadJson(\SoftanUsers\SDK::META_PATH);
-    \SoftanUsers\SDK::$CONFIG = ['active_environment' => 'prod'];
-}
+```bash
+php vendor/bin/users-set-env.php
+php vendor/bin/users-set-env.php --env=prod   # muestra instrucciones para ese entorno
 ```
-
-> **Nota:** `sdk_config.json` se crea en la raíz del proyecto (junto a `composer.json`), no dentro de `vendor/`. Esto garantiza que el archivo persiste tras `composer install` o `composer update`.
-```
-
-Si no se realiza ninguna inicialización previa, el SDK usa `stg` como entorno por defecto (definido en `sdk_meta.json`).
-
-## Configuración
-
-Las credenciales de API están embebidas en `sdk_meta.json` (XOR+base64). No es necesario ni recomendable crear un `sdk_config.json` con credenciales.
-
-El único uso válido de `sdk_config.json` es sobrescribir el entorno activo cuando se prefiere configuración en archivo en lugar de código:
-
-```json
-{
-  "active_environment": "prod"
-}
-```
-
-`sdk_config.json` debe ir en `.gitignore` si se crea. No está incluido en el repositorio del SDK.
 
 ## TLS
 

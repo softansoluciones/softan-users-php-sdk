@@ -1,16 +1,18 @@
 #!/usr/bin/env php
 <?php
 /**
- * Softan Users SDK — Environment selector
+ * Softan Users SDK — Environment info & setup guide
  *
- * Sets the active environment (stg or prod) in sdk_config.json.
- * Credentials are embedded in the SDK — this script only controls
- * which environment is used for API calls.
+ * The active environment is resolved in this order:
+ *   1. SDK::$CONFIG['active_environment']  (programmatic override)
+ *   2. SOFTAN_USERS_ENV env var            (server / process environment)
+ *   3. sdk_meta.json → default_environment (package default: stg)
+ *
+ * This script shows the current resolution and instructions for each method.
  *
  * Usage:
  *   php vendor/bin/users-set-env.php
- *   php vendor/bin/users-set-env.php --env=prod
- *   php vendor/bin/users-set-env.php --env=stg
+ *   php vendor/bin/users-set-env.php --env=prod   (writes an Apache/env suggestion)
  */
 
 declare(strict_types=1);
@@ -30,49 +32,53 @@ if (!$loaded || !class_exists('SoftanUsers\\SDK')) {
 }
 
 use SoftanUsers\SDK;
+use SoftanUsers\Config;
 
 SDK::init();
 
-$configPath = SDK::configPath();
-$validEnvs  = array_keys((array) (SDK::$META['base_urls'] ?? ['stg' => '', 'prod' => '']));
+$programmatic = SDK::$CONFIG['active_environment'] ?? null;
+$envVar       = getenv('SOFTAN_USERS_ENV') ?: null;
+$default      = SDK::$META['default_environment'] ?? 'stg';
+$active       = Config::getActiveEnvironment();
 
-// Parse --env flag
-$env = null;
+// Target env from --env flag
+$target = null;
 foreach ($argv as $arg) {
     if (str_starts_with($arg, '--env=')) {
-        $env = trim(substr($arg, 6));
+        $target = strtolower(trim(substr($arg, 6)));
     }
 }
 
-echo "\n  Softan Users SDK — Environment Setup\n";
-echo "  =====================================\n\n";
+$validEnvs = array_keys((array) (SDK::$META['base_urls'] ?? []));
 
-// Interactive prompt if not passed as flag
-if ($env === null) {
-    $current = SDK::$CONFIG['active_environment'] ?? SDK::$META['default_environment'] ?? 'stg';
+echo "\n";
+echo "  Softan Users SDK — Environment Setup\n";
+echo "  ======================================\n\n";
+echo "  Resolution (highest → lowest priority):\n";
+echo "  ┌─────────────────────────────────────────────────────────────┐\n";
+printf("  │  1. SDK::\$CONFIG['active_environment']  %-18s│\n", $programmatic ? "→ \"{$programmatic}\"" : '(not set)');
+printf("  │  2. SOFTAN_USERS_ENV (env var)          %-18s│\n", $envVar        ? "→ \"{$envVar}\""        : '(not set)');
+printf("  │  3. sdk_meta.json default               → \"%-14s\" │\n", $default);
+echo "  └─────────────────────────────────────────────────────────────┘\n";
+echo "  Active environment: {$active}\n\n";
 
-    echo "  Current environment : {$current}\n";
-    echo "  Available           : " . implode(', ', $validEnvs) . "\n\n";
-    echo "  Enter environment (default: {$current}): ";
-    $input = trim((string) fgets(STDIN));
-    $env   = $input !== '' ? $input : $current;
-}
+$target = $target ?? $active;
 
-// Validate
-$env = strtolower($env);
-if (!in_array($env, $validEnvs, true)) {
-    fwrite(STDERR, "  Error: '{$env}' is not a valid environment. Options: " . implode(', ', $validEnvs) . "\n\n");
+if (!in_array($target, $validEnvs, true)) {
+    fwrite(STDERR, "  Entorno inválido: '{$target}'. Opciones: " . implode(', ', $validEnvs) . "\n\n");
     exit(1);
 }
 
-// Write sdk_config.json at the project root
-$config = ['active_environment' => $env];
-$result = SDK::saveJson($configPath, $config);
+echo "  ── Cómo configurar el entorno \"{$target}\" ──\n\n";
 
-if (!$result) {
-    fwrite(STDERR, "  Error: could not write sdk_config.json at {$configPath}\n\n");
-    exit(1);
-}
+echo "  Opción A — Variable de entorno en Apache VirtualHost (recomendado):\n";
+echo "    SetEnv SOFTAN_USERS_ENV {$target}\n\n";
 
-echo "\n  Active environment set to : {$env}\n";
-echo "  Config saved to           : {$configPath}\n\n";
+echo "  Opción B — Variable de entorno en .htaccess:\n";
+echo "    SetEnv SOFTAN_USERS_ENV {$target}\n\n";
+
+echo "  Opción C — PHP (bootstrap / index.php, antes de cualquier llamada al SDK):\n";
+echo "    putenv('SOFTAN_USERS_ENV={$target}');\n\n";
+
+echo "  Opción D — Override programático (máxima prioridad):\n";
+echo "    \\SoftanUsers\\SDK::\$CONFIG = ['active_environment' => '{$target}'];\n\n";

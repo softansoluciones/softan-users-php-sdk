@@ -6,45 +6,30 @@ final class SDK
     public const META_PATH = __DIR__ . '/../sdk_meta.json';
 
     public static array $META   = [];
+
+    /**
+     * Programmatic environment override — set before the first service call.
+     * Takes priority over SOFTAN_USERS_ENV and sdk_meta.json default.
+     *
+     * Example:
+     *   SDK::$CONFIG = ['active_environment' => 'prod'];
+     */
     public static array $CONFIG = [];
 
     /**
-     * Resolve the path to sdk_config.json at the consuming project's root.
+     * Lazy initializer — only loads sdk_meta.json from disk the first time.
      *
-     * Walks up the directory tree from src/ until it finds the directory that
-     * contains vendor/autoload.php — that is the project root. This ensures the
-     * config survives composer install/update (which wipes vendor/).
-     *
-     * Falls back to the package directory (development / standalone use).
-     */
-    public static function configPath(): string
-    {
-        $dir = __DIR__;
-        for ($i = 0; $i < 8; $i++) {
-            if (is_file($dir . '/vendor/autoload.php')) {
-                return $dir . '/sdk_config.json';
-            }
-            $dir = dirname($dir);
-        }
-        return __DIR__ . '/../sdk_config.json';
-    }
-
-    /**
-     * Lazy initializer — only loads from disk the first time.
-     * If the consuming project pre-sets $META and $CONFIG before the first
-     * service call, those values are preserved for the entire request lifecycle.
-     *
-     * To force a specific environment programmatically:
-     *   SDK::$META   = SDK::loadJson(SDK::META_PATH);
-     *   SDK::$CONFIG = ['active_environment' => 'prod'];
+     * Environment resolution order (highest to lowest priority):
+     *   1. SDK::$CONFIG['active_environment']  (programmatic override)
+     *   2. SOFTAN_USERS_ENV env var            (server / process environment)
+     *   3. sdk_meta.json → default_environment (package default, currently 'stg')
      */
     public static function init(): void
     {
         if (self::$META !== []) {
             return;
         }
-        self::$META   = self::loadJson(self::META_PATH);
-        self::$CONFIG = self::loadJson(self::configPath());
+        self::$META = self::loadJson(self::META_PATH);
     }
 
     public static function loadJson(string $path): array
