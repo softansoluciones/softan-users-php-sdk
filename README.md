@@ -19,7 +19,7 @@ Las credenciales de acceso a la API están embebidas en el SDK (`sdk_meta.json`)
 ## Instalación
 
 ```bash
-composer require softan/users-php-sdk:^0.2.5
+composer require softan/users-php-sdk:^0.2.6
 ```
 
 Listo. No se necesita ningún paso adicional — las credenciales están embebidas.
@@ -189,7 +189,7 @@ El entorno activo se resuelve en este orden (mayor a menor prioridad):
 | Prioridad | Mecanismo |
 |-----------|-----------|
 | 1 | `SDK::$CONFIG['active_environment']` — override programático |
-| 2 | Variable de entorno `SOFTAN_USERS_ENV` |
+| 2 | `sdk_config.json → active_environment` — escrito por `users-set-env.php` |
 | 3 | `sdk_meta.json → default_environment` (valor del paquete: `stg`) |
 
 ### Opción A — CLI (recomendado)

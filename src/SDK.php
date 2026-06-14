@@ -19,10 +19,9 @@ final class SDK
      */
     public static function init(): void
     {
-        if (self::$META !== []) {
-            return;
+        if (self::$META === []) {
+            self::$META = self::loadJson(self::META_PATH);
         }
-        self::$META = self::loadJson(self::META_PATH);
 
         if (self::$CONFIG === []) {
             self::$CONFIG = self::loadJson(self::CONFIG_PATH);
